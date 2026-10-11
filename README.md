@@ -1,8 +1,8 @@
-# MedQ
+# PulseGuard
 
 ## Real-Time Wearable Health Monitoring & Emergency Detection
 
-MedQ is a real-time health monitoring system that analyzes wearable sensor data and uses personalized baseline analysis to detect unusual health conditions and potential emergencies.
+PulseGuard is a real-time health monitoring system that analyzes wearable sensor data and uses personalized baseline analysis to detect unusual health conditions and potential emergencies.
 
 ### Key Features
 - Real-time heart rate monitoring
