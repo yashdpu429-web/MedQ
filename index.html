@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Wearable Health Anomaly Radar</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-rose-500 selection:text-white">
+
+  <!-- TOP APP HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-6 py-3.5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 via-rose-500 to-amber-500 flex items-center justify-center shadow-lg shadow-rose-900/30">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-slate-900 beacon-pulse"></span>
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+            Wearable Health Anomaly Radar
+            <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-emerald-400">Live Continuous Stream</span>
+          </h1>
+          <p class="text-xs text-slate-400">Personalized Multi-Signal Physiological Anomaly Detection & Clinical Triage Dispatcher</p>
+        </div>
+      </div>
+
+      <!-- Header Controls: Profile, Sound, System Status -->
+      <div class="flex items-center gap-3">
+        <!-- Patient Profile Switcher -->
+        <div class="flex items-center space-x-2 bg-slate-800/80 border border-slate-700 rounded-lg px-2.5 py-1.5">
+          <label for="select-profile" class="text-xs text-slate-400 font-medium">Profile:</label>
+          <select id="select-profile" class="bg-transparent text-xs text-white font-semibold focus:outline-none cursor-pointer">
+            <option value="standard" class="bg-slate-900 text-white">Marcus Vance (Standard Adult • Base HR 72)</option>
+            <option value="athlete" class="bg-slate-900 text-white">Alex Rivera (Athlete • Base HR 50)</option>
+            <option value="elderly_copd" class="bg-slate-900 text-white">Harold Miller (COPD • Base SpO2 93%)</option>
+          </select>
+        </div>
+
+        <!-- Sound Alarm Toggle -->
+        <button id="btn-sound-toggle" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+          🔇 Sound: OFF
+        </button>
+
+        <!-- Dynamic Measured Latency Display -->
+        <div id="lbl-latency" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] text-slate-400 font-mono">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1"></span>Detection Latency: <strong class="text-white">Active (sub-second)</strong>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- PROMINENT EMERGENCY ALERT BANNER -->
+    <div id="alert-banner" class="hidden transition-all duration-300 rounded-2xl border-2 p-5 shadow-2xl relative overflow-hidden">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span id="alert-badge" class="px-3 py-1 text-xs font-bold uppercase rounded-full">CRITICAL MULTI-SIGNAL ANOMALY</span>
+            <span id="alert-risk" class="text-xs font-mono font-bold text-rose-300"></span>
+          </div>
+          <h2 id="alert-title" class="text-xl font-bold tracking-tight text-white">CRITICAL MULTI-SIGNAL ANOMALY</h2>
+          <p id="alert-detail" class="text-sm text-slate-200 max-w-3xl leading-relaxed">Significant deviation from the individual's personalized baseline detected.</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="btn-view-soap" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-slate-900 hover:bg-slate-100 shadow transition flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Review Dispatch Note
+          </button>
+          <button id="btn-ack-alert" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CURRENT SCENARIO STATUS TICKER -->
+    <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs">
+      <div class="flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 beacon-pulse"></span>
+        <span class="text-slate-400">Stream Status:</span>
+        <span id="scenario-badge" class="font-semibold text-cyan-300">Active Stream: Normal Baseline</span>
+      </div>
+      <div class="flex items-center space-x-3 text-slate-400 font-mono text-[11px]">
+        <span>PPG Signal Quality: <strong class="text-emerald-400">99.4%</strong></span>
+        <span>•</span>
+        <span>Adaptive Baseline: <strong class="text-cyan-400">Continuous Online Learning (Active)</strong></span>
+      </div>
+    </div>
+
+    <!-- 4 BIOMETRIC TELEMETRY CARDS WITH DYNAMIC BASELINE COMPARISON -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      
+      <!-- Card 1: Heart Rate -->
+      <div class="glass-panel rounded-2xl p-4 relative overflow-hidden transition-all">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span class="font-medium flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/></svg>
+            Heart Rate
+          </span>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-rose-400">PPG / ECG</span>
+        </div>
+        <div class="flex items-baseline space-x-1.5">
+          <span id="val-hr" class="text-3xl font-extrabold tracking-tight font-mono text-white">72</span>
+          <span class="text-xs text-slate-400">bpm</span>
+        </div>
+        <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">Personal Base:</span>
+          <span id="base-hr" class="font-mono text-cyan-400 font-semibold">72.0 ± 6.0 bpm</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Blood Oxygen SpO2 -->
+      <div class="glass-panel rounded-2xl p-4 relative overflow-hidden transition-all">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span class="font-medium flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+            Blood Oxygen
+          </span>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400">SpO2</span>
+        </div>
+        <div class="flex items-baseline space-x-1.5">
+          <span id="val-spo2" class="text-3xl font-extrabold tracking-tight font-mono text-white">98.4</span>
+          <span class="text-xs text-slate-400">%</span>
+        </div>
+        <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">Personal Base:</span>
+          <span id="base-spo2" class="font-mono text-cyan-400 font-semibold">98.2%</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Activity Level -->
+      <div class="glass-panel rounded-2xl p-4 relative overflow-hidden transition-all">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span class="font-medium flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            Physical Exertion
+          </span>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-blue-400">METs / Motion</span>
+        </div>
+        <div class="flex items-baseline space-x-1.5">
+          <span id="val-activity" class="text-3xl font-extrabold tracking-tight font-mono text-white">0.5</span>
+          <span class="text-xs text-slate-400">METs</span>
+        </div>
+        <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">Context State:</span>
+          <span id="state-motion" class="font-mono text-blue-400 font-semibold">Sedentary / Rest</span>
+        </div>
+      </div>
+
+      <!-- Card 4: Skin Temperature -->
+      <div class="glass-panel rounded-2xl p-4 relative overflow-hidden transition-all">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span class="font-medium flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Skin Temperature
+          </span>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-amber-400">Thermal</span>
+        </div>
+        <div class="flex items-baseline space-x-1.5">
+          <span id="val-temp" class="text-3xl font-extrabold tracking-tight font-mono text-white">36.6</span>
+          <span class="text-xs text-slate-400">°C</span>
+        </div>
+        <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">Personal Base:</span>
+          <span id="base-temp" class="font-mono text-cyan-400 font-semibold">36.6°C (97.9°F)</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PRIMARY VISUALIZATIONS GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left Column (2 Cols): Live ECG & 4-Channel Multi-Signal History -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- ECG Lead I Ribbon -->
+        <div class="glass-panel rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Continuous Rhythm Strip (Lead I)</h3>
+            </div>
+            <span class="text-[11px] font-mono text-slate-400">Speed: 25 mm/s • Cal: 10 mm/mV</span>
+          </div>
+          <div class="rounded-xl overflow-hidden border border-slate-800/80 bg-slate-950">
+            <canvas id="canvas-ecg" class="w-full h-24 block"></canvas>
+          </div>
+        </div>
+
+        <!-- 4-Channel Multi-Signal Telemetry Strip Chart -->
+        <div class="glass-panel rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Synchronized Multi-Signal Telemetry Channels</h3>
+            </div>
+            <div class="flex items-center space-x-3 text-[10px] text-slate-400">
+              <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-rose-500"></span> HR</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-emerald-500"></span> SpO2</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-blue-500"></span> Activity</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-amber-500"></span> Temp</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-0.5 border-t border-dashed border-white/60"></span> Baseline</span>
+            </div>
+          </div>
+          <div class="rounded-xl overflow-hidden border border-slate-800/80 bg-slate-950">
+            <canvas id="canvas-multisignal" class="w-full h-72 block"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column (1 Col): Radar Gauge & 2D Phase-Space Exertion Corridor -->
+      <div class="space-y-6">
+
+        <!-- Anomaly Risk Radar Gauge -->
+        <div class="glass-panel rounded-2xl p-4 flex flex-col items-center">
+          <div class="w-full flex items-center justify-between mb-1">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Anomaly Radar Index</h3>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">0.0 - 10.0</span>
+          </div>
+          <div class="w-full h-36 flex items-center justify-center">
+            <canvas id="canvas-gauge" class="w-full h-36 block"></canvas>
+          </div>
+          <div class="w-full grid grid-cols-3 gap-1 pt-1 text-center text-[10px] font-mono border-t border-slate-800/80">
+            <div class="text-emerald-400 font-bold">NORMAL<br><span class="text-slate-500">&lt;4.0</span></div>
+            <div class="text-amber-400 font-bold">WARNING<br><span class="text-slate-500">4.5 - 6.9</span></div>
+            <div class="text-rose-400 font-bold">CRITICAL<br><span class="text-slate-500">&ge;7.0</span></div>
+          </div>
+        </div>
+
+        <!-- 2D Phase Space Exertion Corridor -->
+        <div class="glass-panel rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Exertion Phase-Space Corridor</h3>
+            <span class="text-[10px] text-cyan-400 font-mono">HR vs Activity (METs)</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">
+            Distinguishes <strong class="text-emerald-300">exercise tachycardia</strong> from <strong class="text-rose-400">unprovoked resting cardiac spikes</strong>.
+          </p>
+          <div class="rounded-xl overflow-hidden border border-slate-800/80 bg-slate-950">
+            <canvas id="canvas-phasespace" class="w-full h-56 block"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- INJECTION CONTROL PANEL (SIMULATION CONSOLE) -->
+    <div class="glass-panel rounded-2xl p-6 border-2 border-indigo-500/30 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-indigo-950/20">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800">
+        <div>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+            Live Simulation & Stress Test Console
+          </h2>
+          <p class="text-xs text-slate-400">Inject emergencies to verify detection latency, multi-signal severity, and false-alarm suppression.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-reset-normal" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm transition">
+            🔄 Reset to Normal Baseline
+          </button>
+        </div>
+      </div>
+
+      <!-- Preset Scenarios Buttons Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        
+        <!-- Injection 1: Emergency Spike (Heart Rate Only) -->
+        <button id="btn-inject-cardiac" class="p-3 rounded-xl text-left bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 transition group">
+          <div class="flex items-center justify-between text-xs font-bold text-rose-300 mb-1">
+            <span class="flex items-center gap-1.5">🚨 Emergency Spike</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-800/60 text-rose-200">Single Signal</span>
+          </div>
+          <p class="text-[11px] text-slate-300">HR jumps to ~160 bpm @ rest (0.2 METs). SpO2 remains normal (98%).</p>
+          <div class="mt-2 text-[10px] font-mono text-rose-400 group-hover:underline">Expected: High HR @ Low Activity →</div>
+        </button>
+
+        <!-- Injection 2: Multi-Signal Emergency (NEW) -->
+        <button id="btn-inject-multisignal" class="p-3 rounded-xl text-left bg-purple-950/50 hover:bg-purple-900/60 border border-purple-500/50 transition group">
+          <div class="flex items-center justify-between text-xs font-bold text-purple-300 mb-1">
+            <span class="flex items-center gap-1.5">🚨 Multi-Signal Emergency</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-800/80 text-purple-100">Multi Signal</span>
+          </div>
+          <p class="text-[11px] text-slate-300">Elevated HR (162 bpm) + Decreased SpO2 (86.5%) + Low Activity + Temp 38.2°C.</p>
+          <div class="mt-2 text-[10px] font-mono text-purple-300 group-hover:underline">Expected: Compound Severity Spike →</div>
+        </button>
+
+        <!-- Injection 3: Vigorous Workout (Judge Test) -->
+        <button id="btn-sim-workout" class="p-3 rounded-xl text-left bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/40 transition group">
+          <div class="flex items-center justify-between text-xs font-bold text-emerald-300 mb-1">
+            <span class="flex items-center gap-1.5">🏃 Vigorous Workout</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-800/60 text-emerald-200">Normal Exertion</span>
+          </div>
+          <p class="text-[11px] text-slate-300">HR reaches 160 bpm, BUT activity is 8.5 METs (180 spm).</p>
+          <div class="mt-2 text-[10px] font-mono text-emerald-400 group-hover:underline">Expected: NO FALSE ALARM (Suppressed) →</div>
+        </button>
+
+        <!-- Injection 4: Normal Walking -->
+        <button id="btn-sim-walk" class="p-3 rounded-xl text-left bg-slate-850 hover:bg-slate-800 border border-slate-700 transition group">
+          <div class="flex items-center justify-between text-xs font-bold text-slate-300 mb-1">
+            <span class="flex items-center gap-1.5">🚶 Normal Day-to-Day Walk</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">Routine</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Mild walking activity (3.2 METs), HR slightly rises to 96 bpm.</p>
+          <div class="mt-2 text-[10px] font-mono text-slate-400 group-hover:underline">Expected: Normal Homeostasis →</div>
+        </button>
+
+      </div>
+
+      <!-- Manual Fine-Grained Sliders -->
+      <div class="pt-4 border-t border-slate-800">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-3">Custom Manual Parameter Injection</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Slider HR -->
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Heart Rate:</span>
+              <span id="lbl-slider-hr" class="font-mono text-white font-bold">120 bpm</span>
+            </div>
+            <input id="slider-hr" type="range" min="30" max="210" value="120" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-500">
+          </div>
+          <!-- Slider SpO2 -->
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Blood Oxygen:</span>
+              <span id="lbl-slider-spo2" class="font-mono text-white font-bold">95%</span>
+            </div>
+            <input id="slider-spo2" type="range" min="70" max="100" value="95" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+          </div>
+          <!-- Slider Activity -->
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Activity Level:</span>
+              <span id="lbl-slider-activity" class="font-mono text-white font-bold">1.0 METs</span>
+            </div>
+            <input id="slider-activity" type="range" min="0" max="10" step="0.5" value="1.0" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+          </div>
+          <!-- Slider Temp -->
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Temperature:</span>
+              <span id="lbl-slider-temp" class="font-mono text-white font-bold">37.0°C</span>
+            </div>
+            <input id="slider-temp" type="range" min="34" max="42" step="0.2" value="37.0" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500">
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end">
+          <button id="btn-inject-custom" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow transition">
+            🎛️ Inject Custom Telemetry Vector
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- AUTOMATED DOCTOR NOTIFICATION / DISPATCH CARD -->
+    <div id="doctor-dispatch-card" class="hidden glass-panel rounded-2xl p-6 border-2 border-rose-500/40 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-rose-950/30">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-600 text-white">Automated Physician Triage Dispatch</span>
+            <span id="dispatch-time" class="text-xs font-mono text-slate-400"></span>
+          </div>
+          <h3 id="dispatch-patient" class="text-base font-bold text-white mt-1"></h3>
+          <p id="dispatch-reason" class="text-xs text-rose-300 font-medium"></p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="btn-view-sms" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+            📱 Doctor Pager / SMS
+          </button>
+          <button id="btn-view-fhir" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+            📑 HL7 FHIR Payload
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Signal Deviations Snapshot -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Multi-Signal Snapshot vs Personal Baseline</h4>
+          <div id="dispatch-stats" class="space-y-1.5 bg-slate-950/70 p-3.5 rounded-xl border border-slate-800/80">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Clinical Action Protocol -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Recommended Clinical Protocols</h4>
+          <ul id="dispatch-actions" class="space-y-2 bg-slate-950/70 p-3.5 rounded-xl border border-slate-800/80">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-3 pt-2 text-[11px] text-slate-500 border-t border-slate-800 font-sans">
+        * <em>Notice: Automated physiological anomaly detection for clinical review. Does not diagnose medical conditions.</em>
+      </div>
+    </div>
+
+    <!-- AUDIT LOG & ANOMALY EVENT HISTORY -->
+    <div class="glass-panel rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Telemetry Event Log & Audit History
+        </h3>
+        <span class="text-[11px] text-slate-500 font-mono">Real-Time In-Memory Stream Buffer</span>
+      </div>
+      <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+        <table class="w-full text-left">
+          <thead class="bg-slate-900/90 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="py-2.5 px-3">Timestamp</th>
+              <th class="py-2.5 px-3">Severity</th>
+              <th class="py-2.5 px-3">Classification</th>
+              <th class="py-2.5 px-3">Telemetry Readings</th>
+              <th class="py-2.5 px-3">Data-Driven Explanation</th>
+            </tr>
+          </thead>
+          <tbody id="audit-log-body" class="divide-y divide-slate-800/60">
+            <tr class="text-xs text-slate-500 text-center py-4">
+              <td colspan="5" class="py-6">Awaiting anomaly events. Normal homeostasis active.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- CLINICAL MODAL (SOAP NOTE / FHIR / SMS) -->
+  <div id="dispatch-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Clinical Telemetry Dispatch Document</h3>
+        <div class="flex items-center gap-2">
+          <button id="btn-copy-modal" class="px-3 py-1 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition">Copy Text</button>
+          <button id="btn-close-modal" class="text-slate-400 hover:text-white text-lg font-bold px-2">&times;</button>
+        </div>
+      </div>
+      <div class="overflow-y-auto flex-1 bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed select-all" id="modal-content">
+        <!-- Content inserted dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT INCLUSIONS -->
+  <script src="js/anomaly_engine.js"></script>
+  <script src="js/telemetry_stream.js"></script>
+  <script src="js/doctor_notifier.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

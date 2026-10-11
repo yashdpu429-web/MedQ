@@ -1,0 +1,190 @@
+/* ==========================================================================
+   Wearable Health Anomaly Radar — Design System & Custom Styles
+   Light Healthcare SaaS Aesthetic with Subtle Glassmorphism
+   ========================================================================== */
+
+:root {
+  --bg-main: #F4F7FB;
+  --surface-primary: #FFFFFF;
+  --sidebar-headings: #263858;
+  --accent-teal: #168C83;
+  --accent-teal-hover: #12726B;
+  --accent-teal-subtle: #E8F5F4;
+  --secondary-blue: #4776B9;
+  --secondary-blue-subtle: #EEF4FC;
+  --warning-amber: #E5A33D;
+  --warning-subtle: #FEF7EC;
+  --critical-red: #D9364F;
+  --critical-subtle: #FDF2F4;
+  --critical-border: #F9CAD2;
+  --text-main: #182338;
+  --text-secondary: #64748B;
+  --border-subtle: #DFE6EF;
+  --border-focus: #168C83;
+  --radius-card: 16px;
+  --radius-sm: 8px;
+  --shadow-subtle: 0 1px 3px rgba(38, 56, 88, 0.04), 0 4px 14px rgba(38, 56, 88, 0.03);
+  --shadow-card: 0 4px 20px -2px rgba(38, 56, 88, 0.06), 0 2px 6px -1px rgba(38, 56, 88, 0.03);
+  --shadow-float: 0 12px 32px -4px rgba(38, 56, 88, 0.12), 0 4px 12px -2px rgba(38, 56, 88, 0.04);
+}
+
+/* Typography & Base Reset */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Numerical telemetry font formatting */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Subtle Glassmorphic Panel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-subtle);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel:hover {
+  border-color: #CAD5E2;
+  box-shadow: var(--shadow-card);
+}
+
+.glass-panel-elevated {
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* Sidebar styling */
+.sidebar-nav-item {
+  color: #64748B;
+  transition: all 0.15s ease-in-out;
+  border-radius: 10px;
+}
+
+.sidebar-nav-item:hover {
+  background-color: #EDF3F9;
+  color: #263858;
+}
+
+.sidebar-nav-item.active {
+  background-color: #E8F5F4;
+  color: #168C83;
+  font-weight: 600;
+}
+
+.sidebar-nav-item.active svg {
+  color: #168C83;
+}
+
+/* Alert Banner Animations */
+@keyframes alert-entrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.alert-banner-enter {
+  animation: alert-entrance 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.08);
+  }
+}
+
+.live-pulse {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes critical-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(217, 54, 79, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(217, 54, 79, 0);
+  }
+}
+
+.critical-pulse-badge {
+  animation: critical-pulse 1.8s infinite;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #EDF2F7;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Custom Range Slider */
+input[type=range] {
+  -webkit-appearance: none;
+  background: #DFE6EF;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #168C83;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.1s ease;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Sparkline canvas */
+.sparkline-canvas {
+  width: 100%;
+  height: 38px;
+  display: block;
+}
+
+/* Active navigation indicator pill */
+.nav-indicator {
+  position: absolute;
+  left: 0;
+  width: 3.5px;
+  height: 20px;
+  background-color: #168C83;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}

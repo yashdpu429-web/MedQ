@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Automated Clinical Test Suite — Wearable Health Anomaly Radar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #F4F7FB; color: #182338; }
+  </style>
+</head>
+<body class="p-6 md:p-10 max-w-5xl mx-auto">
+
+  <!-- Header -->
+  <div class="mb-8 flex items-center justify-between pb-5 border-b border-[#DFE6EF]">
+    <div>
+      <div class="text-xs font-bold text-[#168C83] uppercase tracking-wider">Verification & Validation Bench</div>
+      <h1 class="text-2xl font-extrabold text-[#263858] tracking-tight">Health Anomaly Radar Test Suite</h1>
+      <p class="text-xs text-[#64748B] mt-1">Multi-signal syndromic tests, baseline contamination protection, exertion gating & recovery</p>
+    </div>
+    <div class="text-right">
+      <button onclick="runAllTests()" class="px-4 py-2 text-xs font-bold rounded-xl bg-[#168C83] text-white hover:bg-[#12726B] shadow-sm transition">
+        Re-run Test Suite
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-3 gap-4 mb-8 text-center text-xs">
+    <div class="p-4 rounded-xl bg-white border border-[#DFE6EF] shadow-sm">
+      <div class="text-[#64748B]">Total Assertions</div>
+      <div id="stat-total" class="text-3xl font-extrabold text-[#263858] mt-1">0</div>
+    </div>
+    <div class="p-4 rounded-xl bg-white border border-[#DFE6EF] shadow-sm">
+      <div class="text-[#64748B]">Passed Assertions</div>
+      <div id="stat-passed" class="text-3xl font-extrabold text-[#168C83] mt-1">0</div>
+    </div>
+    <div class="p-4 rounded-xl bg-white border border-[#DFE6EF] shadow-sm">
+      <div class="text-[#64748B]">Failed Assertions</div>
+      <div id="stat-failed" class="text-3xl font-extrabold text-[#D9364F] mt-1">0</div>
+    </div>
+  </div>
+
+  <!-- Test Results List -->
+  <div class="bg-white rounded-2xl border border-[#DFE6EF] p-6 shadow-sm space-y-4">
+    <h2 class="text-sm font-bold text-[#263858]">Execution Log & Diagnostic Verification</h2>
+    <div id="test-results-container" class="space-y-3"></div>
+  </div>
+
+  <!-- Load Subsystem Modules -->
+  <script src="../js/models.js"></script>
+  <script src="../js/baseline_learner.js"></script>
+  <script src="../js/anomaly_engine.js"></script>
+  <script src="../js/telemetry_stream.js"></script>
+  <script src="../js/doctor_notifier.js"></script>
+
+  <script>
+    let totalTests = 0;
+    let passedTests = 0;
+    let failedTests = 0;
+
+    function assert(name, condition, details = "") {
+      totalTests++;
+      const passed = Boolean(condition);
+      if (passed) passedTests++; else failedTests++;
+
+      const container = document.getElementById('test-results-container');
+      const item = document.createElement('div');
+      item.className = `p-4 rounded-xl border ${passed ? 'bg-[#E8F5F4]/40 border-[#BDE1DE]' : 'bg-[#FDF2F4] border-[#F9CAD2]'} text-xs flex items-start justify-between gap-4`;
+      item.innerHTML = `
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded font-extrabold text-[10px] ${passed ? 'bg-[#168C83] text-white' : 'bg-[#D9364F] text-white'} uppercase">
+              ${passed ? 'PASS' : 'FAIL'}
+            </span>
+            <span class="font-bold text-[#263858]">${name}</span>
+          </div>
+          <div class="text-[#64748B] pl-1 font-mono text-[11px]">${details}</div>
+        </div>
+        <div class="font-mono font-bold ${passed ? 'text-[#168C83]' : 'text-[#D9364F]'}">
+          ${passed ? '✓ Validated' : '✗ Failed'}
+        </div>
+      `;
+      container.appendChild(item);
+
+      document.getElementById('stat-total').textContent = totalTests;
+      document.getElementById('stat-passed').textContent = passedTests;
+      document.getElementById('stat-failed').textContent = failedTests;
+    }
+
+    function runAllTests() {
+      totalTests = 0;
+      passedTests = 0;
+      failedTests = 0;
+      document.getElementById('test-results-container').innerHTML = '';
+
+      // TEST 1: Unsupervised Dynamic Baseline Learning
+      try {
+        const engine = new HealthAnomalyRadarEngine();
+        const base = engine.getBaseline();
+        // Feed 15 clean readings with HR = 68
+        for (let i = 0; i < 15; i++) {
+          base.update({ hr: 68.0, spo2: 98.6, activity: 0.4, temp: 36.6 });
+        }
+        assert(
+          "1. Unsupervised Baseline Online Adaptation",
+          base.isCalibrated === true && base.stats.hr.mean < 71.0,
+          `Adapted HR Mean: ${base.stats.hr.mean.toFixed(1)} bpm (Target: ~68.0-70.5 bpm)`
+        );
+      } catch (e) {
+        assert("1. Unsupervised Baseline Online Adaptation", false, e.message);
+      }
+
+      // TEST 2: Silent Resting Tachycardia (160 bpm @ 0.2 METs)
+      try {
+        const engine = new HealthAnomalyRadarEngine();
+        let evalResult = null;
+        for (let i = 0; i < 3; i++) {
+          evalResult = engine.processReading({
+            hr: 162.0, spo2: 98.0, activity: 0.2, temp: 36.7, ingestTimestamp: Date.now() - 15
+          });
+        }
+        assert(
+          "2. Silent Cardiac Spike Triggers Critical Emergency Alert",
+          evalResult.severity === 'CRITICAL' && evalResult.anomalyType === 'CARDIAC_SPIKE',
+          `Severity: ${evalResult.severity}, Type: ${evalResult.anomalyType}, Score: ${evalResult.anomalyScore}/10`
+        );
+      } catch (e) {
+        assert("2. Silent Cardiac Spike Triggers Critical Emergency Alert", false, e.message);
+      }
+
+      // TEST 3: Exertion Gating Benchmark (The Workout Test)
+      // HR 155 bpm at 8.4 METs should NOT fire false alarm!
+      try {
+        const engine = new HealthAnomalyRadarEngine();
+        const evalResult = engine.processReading({
+          hr: 154.0, spo2: 97.4, activity: 8.4, temp: 37.3, ingestTimestamp: Date.now() - 12
+        });
+        assert(
+          "3. Vigorous Workout False Alarm Suppressed (Exertion Gating)",
+          evalResult.severity === 'NORMAL' && evalResult.isExertionExplained === true,
+          `Severity: ${evalResult.severity}, ExertionExplained: ${evalResult.isExertionExplained}, Score: ${evalResult.anomalyScore}/10`
+        );
+      } catch (e) {
+        assert("3. Vigorous Workout False Alarm Suppressed", false, e.message);
+      }
+
+      // TEST 4: Combined Acute Hypoxia & Reflex Tachycardia
+      try {
+        const engine = new HealthAnomalyRadarEngine();
+        let evalResult = null;
+        for (let i = 0; i < 3; i++) {
+          evalResult = engine.processReading({
+            hr: 124.0, spo2: 85.5, activity: 0.3, temp: 36.8, ingestTimestamp: Date.now() - 14
+          });
+        }
+        assert(
+          "4. Acute Hypoxemia with Tachycardia Triggers Critical Alert",
+          evalResult.severity === 'CRITICAL' && evalResult.anomalyType === 'ACUTE_HYPOXIA',
+          `Severity: ${evalResult.severity}, Type: ${evalResult.anomalyType}, Reason: ${evalResult.clinicalReason}`
+        );
+      } catch (e) {
+        assert("4. Acute Hypoxemia with Tachycardia", false, e.message);
+      }
+
+      // TEST 5: Sensor Noise Rejection & Motion Artifact Filter
+      try {
+        const engine = new HealthAnomalyRadarEngine();
+        const evalResult = engine.processReading({
+          hr: 98.0, spo2: 74.0, activity: 7.2, temp: 36.5, signalQuality: 42.0, ingestTimestamp: Date.now() - 10
+        });
+        assert(
+          "5. Low Optical Signal Noise Filtered (Prevents Red Alarm)",
+          evalResult.severity !== 'CRITICAL' && evalResult.isSensorArtifact === true,
+          `Severity: ${evalResult.severity}, isSensorArtifact: ${evalResult.isSensorArtifact}`
+        );
+      } catch (e) {
+        assert("5. Low Optical Signal Noise Filtered", false, e.message);
+      }
+
+      // TEST 6: Baseline Contamination Protection (Freeze Guard)
+      try {
+        const engine = new HealthAnomalyRadarEngine();
+        const base = engine.getBaseline();
+        const initialHrMean = base.stats.hr.mean;
+
+        // Inject 5 critical anomaly frames (HR 165)
+        for (let i = 0; i < 5; i++) {
+          engine.processReading({ hr: 165.0, spo2: 98.0, activity: 0.2, temp: 36.7 });
+        }
+        const postAnomalyHrMean = base.stats.hr.mean;
+        assert(
+          "6. Baseline Contamination Guard Freezes During Active Anomaly",
+          postAnomalyHrMean === initialHrMean,
+          `Initial Baseline Mean: ${initialHrMean} bpm, Post-Anomaly Mean: ${postAnomalyHrMean} bpm (Drift: 0.0 bpm)`
+        );
+      } catch (e) {
+        assert("6. Baseline Contamination Guard Freezes During Active Anomaly", false, e.message);
+      }
+
+      // TEST 7: Duplicate Event Suppression
+      try {
+        const engine = new HealthAnomalyRadarEngine();
+        for (let i = 0; i < 4; i++) {
+          engine.processReading({ hr: 160.0, spo2: 98.0, activity: 0.2, temp: 36.7 });
+        }
+        assert(
+          "7. Duplicate Alert Suppression Preserves Single Continuous Event",
+          engine.eventHistory.length === 1 && engine.activeAlert.durationSec >= 3,
+          `Events in History: ${engine.eventHistory.length}, Active Alert Duration: ${engine.activeAlert.durationSec}s`
+        );
+      } catch (e) {
+        assert("7. Duplicate Alert Suppression", false, e.message);
+      }
+
+      // TEST 8: Hysteresis & Recovery Resolution
+      try {
+        const engine = new HealthAnomalyRadarEngine();
+        // 1. Trigger anomaly
+        for (let i = 0; i < 3; i++) {
+          engine.processReading({ hr: 160.0, spo2: 98.0, activity: 0.2, temp: 36.7 });
+        }
+        // 2. Return to normal across cooldown cycles (6 ticks)
+        let lastEval = null;
+        for (let i = 0; i < 7; i++) {
+          lastEval = engine.processReading({ hr: 72.0, spo2: 98.4, activity: 0.5, temp: 36.6 });
+        }
+        assert(
+          "8. Physiological Hysteresis Confirms Recovery Resolution",
+          engine.activeAlert === null && engine.eventHistory.some(e => e.anomalyType === 'RECOVERY_RESOLVED'),
+          `Active Alert: ${engine.activeAlert ? 'Still Active' : 'Cleared'}, Total Logged Records: ${engine.eventHistory.length}`
+        );
+      } catch (e) {
+        assert("8. Physiological Hysteresis Confirms Recovery", false, e.message);
+      }
+
+      // TEST 9: Measured Detection Latency Calculation
+      try {
+        const engine = new HealthAnomalyRadarEngine();
+        const ingestTime = Date.now() - 25; // 25ms prior
+        const evalResult = engine.processReading({
+          hr: 160.0, spo2: 98.0, activity: 0.2, temp: 36.7, ingestTimestamp: ingestTime
+        });
+        const latency = evalResult.latency.endToEndMs;
+        assert(
+          "9. Dynamic Detection Latency Measurement (>0 ms, Non-Hardcoded)",
+          latency >= 20 && latency <= 200,
+          `Measured Ingestion-to-Detection Latency: ${latency}ms`
+        );
+      } catch (e) {
+        assert("9. Dynamic Detection Latency Measurement", false, e.message);
+      }
+    }
+
+    // Auto-run on load
+    runAllTests();
+  </script>
+</body>
+</html>
